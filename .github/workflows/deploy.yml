@@ -1,4 +1,4 @@
-name: Deploy Laravel App
+name: Fast Laravel Deploy
 
 on:
   push:
@@ -6,10 +6,10 @@ on:
       - main
 
 jobs:
-  web-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Get code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup PHP
@@ -23,25 +23,39 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Composer Dependencies (Backend)
+      - name: Install Composer Dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction
 
-      - name: Install NPM Dependencies & Build Assets (Frontend)
+      - name: Build Frontend Assets
         run: |
           npm install
-          npm run build  # This creates public/build/ on the GitHub runner
+          npm run build
 
-      - name: Sync Files to Server
+      - name: Create Deployment Archive
+        run: |
+          # Compress everything into a single zip file, excluding git, node_modules, and local env
+          zip -r deployment.zip . -x "*.git*" -x "node_modules/*" -x ".env"
+
+      - name: Upload Single Zip via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./  # Deploys your entire project root (including the newly generated public/build)
+          local-dir: ./
+          include: |
+            deployment.zip
           server-dir: public_html/artlab/
-          exclude: |
-            **/.git/**
-            **/node_modules/**
-            **/.env
-            **/tests/**
-            **/storage/*.sqlite
+
+      - name: Unzip and Optimize on Server via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          script: |
+            cd public_html/artlab
+            unzip -o deployment.zip
+            rm deployment.zip
+            php artisan config:cache
+            php artisan route:cache
