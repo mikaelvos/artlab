@@ -36,15 +36,18 @@ jobs:
           # Compress everything into a single zip file, excluding git, node_modules, and local env
           zip -r deployment.zip . -x "*.git*" -x "node_modules/*" -x ".env"
 
+      - name: Isolate Zip for Upload
+        run: |
+          mkdir -p upload_dir
+          mv deployment.zip upload_dir/
+
       - name: Upload Single Zip via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./
-          include: |
-            deployment.zip
+          local-dir: ./upload_dir/
           server-dir: public_html/artlab/
 
       - name: Unzip and Optimize on Server via SSH
