@@ -18,10 +18,12 @@
             }
         </style>
     @endif
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
 </head>
 <body class="bg-cyan-200" id="top">
 @include('components.misc.topbutton')
-<div class="m-auto w-lg md:w-3xl pt-10">
+<div class="m-auto w-md md:w-3xl pt-2">
     <x-header/>
     <div class="bg-amber-200 border-2 border-red-500 rounded-md border-dashed p-2">
         <div>
