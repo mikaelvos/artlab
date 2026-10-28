@@ -1,4 +1,4 @@
-name: Build and Deploy to Server
+name: Deploy Laravel App
 
 on:
   push:
@@ -6,27 +6,42 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  web-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Get code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          tools: composer
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install dependencies and build
+      - name: Install Composer Dependencies (Backend)
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Install NPM Dependencies & Build Assets (Frontend)
         run: |
           npm install
-          npm run build  # Generates your production files (e.g., in dist/ or public/build)
+          npm run build  # This creates public/build/ on the GitHub runner
 
-      - name: Deploy over FTP
+      - name: Sync Files to Server
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./public/build
-          server-dir: public_html/artlab
+          local-dir: ./  # Deploys your entire project root (including the newly generated public/build)
+          server-dir: public_html/artlab/
+          exclude: |
+            **/.git/**
+            **/node_modules/**
+            **/.env
+            **/tests/**
+            **/storage/*.sqlite
