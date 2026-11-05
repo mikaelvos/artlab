@@ -1,5 +1,5 @@
 @php
-    $articles = [['intro', 'Introduction'], ['intro', 'Introduction']];
+    $articles = [['_blank', 'Blank'], ['intro', 'Intro'], ['graffiti', 'Oct 6th']];
 @endphp
 <div class="grid grid-cols-3 md:grid-cols-5 gap-2 pb-2">
 
